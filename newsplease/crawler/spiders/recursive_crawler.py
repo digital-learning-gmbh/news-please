@@ -1,6 +1,7 @@
 import logging
 
 import scrapy
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 
 
 class RecursiveCrawler(scrapy.Spider):
@@ -49,9 +50,15 @@ class RecursiveCrawler(scrapy.Spider):
                 .recursive_requests(response, self, self.ignore_regex,
                                     self.ignore_file_extensions):
             yield request
-
+            
+        # Remove tracking from urls    
+        u = urlparse(self.original_url)
+        query = parse_qs(u.query, keep_blank_values=True)
+        query.pop('source', None)
+        u = u._replace(query=urlencode(query, True))
+        
         yield self.helper.parse_crawler.pass_to_pipeline_if_article(
-            response, self.allowed_domains[0], self.original_url)
+            response, self.allowed_domains[0], urlunparse(u))
 
     @staticmethod
     def supports_site(url):
