@@ -4,6 +4,7 @@ This is a helper class for the crawler's parse methods
 import logging
 import re
 import time
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 
 import scrapy
 
@@ -65,7 +66,13 @@ class ParseCrawler(object):
         article['modified_date'] = timestamp
         article['download_date'] = timestamp
         article['source_domain'] = source_domain.encode("utf-8")
-        article['url'] = response.url
+        
+        u = urlparse(response.url)
+        query = parse_qs(u.query, keep_blank_values=True)
+        query.pop('source', None)
+        u = u._replace(query=urlencode(query, True))
+        
+        article['url'] = urlunparse(u)
         article['html_title'] = response.selector.xpath('//title/text()') \
             .extract_first().encode("utf-8")
         if rss_title is None:
